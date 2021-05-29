@@ -64,8 +64,9 @@ class DataCleaning:
             encoder = OneHotEncoder(sparse=False)
             encoded = pd.DataFrame(encoder.fit_transform(dataset.iloc[:, i].values.reshape(-1, 1)))
             encoded.columns = encoder.get_feature_names(dataset.columns[[i]])
-            dataset.drop(dataset.columns[[i]], axis=1, inplace=True)
             dataset = pd.concat([dataset, encoded], axis=1)
+        for i in reversed(columns): # drop columns in reverse so that the index do not change
+            dataset.drop(dataset.columns[[i]], axis=1, inplace=True)
         return dataset
 
     def encode_labels(self, merged_data, columns):
