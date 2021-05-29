@@ -1,13 +1,11 @@
 from random import randrange
 import numpy as np
 import pydot
-import graphviz
 from math import log2
 import copy
 
 
 class DecisionTree:
-    # def __init__(self, x_train, y_train, x_test, y_test):
     def __init__(self, train, test, columns):
         self.name = 'Decision Tree'
         self.train = train
@@ -17,14 +15,11 @@ class DecisionTree:
         self.columns = columns
         self.root = None
         self.graph = None
-        features = range(len(train[0]) - 1)
 
     # Build a decision tree
     def build_tree(self):
         class_values = list(set(row[-1] for row in self.train))
         current_gini = self.gini_index([self.train], class_values)
-        # print('Gini index')
-        # print(current_gini)
         variable_importance = z = np.zeros(len(self.train[0]) - 1)
         self.root = self.select_best_feature(self.train, current_gini, variable_importance, [])
         self.split_node(self.root, 50, 15, 1, variable_importance, None, None)
@@ -69,7 +64,6 @@ class DecisionTree:
 
     # Select the best split point for a dataset
     def select_best_feature(self, dataset, current_gini, variable_importance, features_already_used):
-        # print('Select best feature')
         class_values = list(set(row[-1] for row in dataset))
         feature_index, feature_split_value, feature_gini_score, feature_clusters = 999, 999, 999, None  # best feature
         features = range(len(dataset[0]) - 1)
@@ -79,8 +73,6 @@ class DecisionTree:
         for index in features:  # for each feature
             if index in features_already_used:
                 continue
-            # print('Feature')
-            # print(index)
             possible_values = list(set(row[index] for row in dataset))
             if len(possible_values) == 2 and ((possible_values[0] == 0 and possible_values[1] == 1) or (possible_values[0] == 1 and possible_values[1] == 0)):
                 value = 0.5
@@ -91,45 +83,14 @@ class DecisionTree:
                     feature_index, feature_split_value, feature_gini_score, feature_clusters = index, value, gini, clusters
             else:
                 for value in possible_values:  # for each value of that feature
-                    # print('Try value')
-                    # print(value)
                     # compute the clusters that result from the split
                     clusters = self.split_dataset_by_feature(index, value, dataset)
                     # compute the gini index for the clusters
                     gini = self.gini_index(clusters, class_values)
                     variable_importance[index] += current_gini - gini
-                    # print('Variable importance')
-                    # print(variable_importance[index])
                     # replace the selected feature if a better one was found
                     if gini < feature_gini_score:
                         feature_index, feature_split_value, feature_gini_score, feature_clusters = index, value, gini, clusters
-            # compute the clusters that result from the split
-            # row = dataset[randrange(len(dataset))]
-            # print('Split value')
-            # print(row[index])
-            # clusters = self.split_dataset_by_feature(index, row[index], dataset)
-            # compute the gini index for the clusters
-            # gini = self.gini_index(clusters, class_values)
-            # print('Current gini')
-            # print(current_gini)
-            # print('Gini')
-            # print(gini)
-            # print('Variable importance: ')
-            # variable_importance[index] += current_gini - gini
-            # print(variable_importance[index])
-            # replace the selected feature if a better one was found
-            # if gini < feature_gini_score:
-            #     feature_index, feature_split_value, feature_gini_score, feature_clusters = index, row[
-            #         index], gini, clusters
-        # print('Feature chosen:')
-        # print(feature_index)
-        # print('Feature split value:')
-        # print(feature_split_value)
-        # if feature_clusters:
-        #     print('Left: ')
-        #     print(len(feature_clusters[0]))
-        #     print('Right: ')
-        #     print(len(feature_clusters[1]))
         if feature_index == 999:
             return {'index': None, 'feature': None, 'value': None, 'gini': current_gini,
                     'clusters': None, 'features_already_used': features_already_used}
@@ -185,7 +146,6 @@ class DecisionTree:
         if node['left'] == node['right']:
             parent[childKey] = self.create_terminal_node(left + right)
 
-
     # Make a prediction with a decision tree
     def predict(self, node, row):
         if row[node['index']] >= node['value']:
@@ -198,18 +158,6 @@ class DecisionTree:
                 return self.predict(node['left'], row)
             else:
                 return node['left']
-
-    # menu = {'dinner':
-    #             {'chicken':'good',
-    #              'beef':'average',
-    #              'vegetarian':{
-    #                    'tofu':'good',
-    #                    'salad':{
-    #                             'caeser':'bad',
-    #                             'italian':'average'}
-    #                    },
-    #              'pork':'bad'}
-    #         }
 
     def draw_edge(self, parent_name, child_name):
         edge = pydot.Edge(parent_name, child_name)
