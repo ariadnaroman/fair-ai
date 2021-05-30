@@ -1,0 +1,2 @@
+{'true_positive': 2327, 'true_negative': 11468, 'false_negative': 1519, 'false_positive': 966}
+{'error_rate': 15.264127764127764, 'accuracy': 84.73587223587224, 'precision': 70.66290121769761, 'sensitivity': 60.502847039858565, 'specificity': 92.23023781375412, 'f1_score': 65.19120324975486}
