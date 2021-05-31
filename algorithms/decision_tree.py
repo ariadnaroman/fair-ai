@@ -19,9 +19,9 @@ class DecisionTree:
     # Build a decision tree
     def build_tree(self):
         class_values = list(set(row[-1] for row in self.train))
-        current_gini = self.gini_index([self.train], class_values)
+        current_entropy = self.calculate_entropy(self.train, class_values)
         variable_importance = z = np.zeros(len(self.train[0]) - 1)
-        self.root = self.select_best_feature(self.train, current_gini, variable_importance, [])
+        self.root = self.select_best_feature(self.train, current_entropy, variable_importance, [])
         self.split_node(self.root, 10, 30, 1, variable_importance, None, None)
         return self.root
 
@@ -37,9 +37,24 @@ class DecisionTree:
 
     def calculate_entropy(self, dataset, classes):
         entropy = 0
-        for class_val in classes:
-            p = [row[-1] for row in dataset].count(class_val)/float(len(dataset))
-            entropy = entropy - p * log2(p)
+        if len(dataset):
+            for class_val in classes:
+                count_class = [row[-1] for row in dataset].count(class_val)
+                if count_class:
+                    p = count_class/float(len(dataset))
+                    entropy = entropy - p * log2(p)
+        return entropy
+
+    def calculate_entropy_clusters(self, clusters, classes):
+        weights = []
+        for i in range(0, len(clusters)):
+            weights.append(len(clusters[i]))
+        total_number_instances = sum(weights)
+        for i in range (0, len(weights)):
+            weights[i] = weights[i]/float(total_number_instances)
+        entropy = 0
+        for i in range(0, len(clusters)):
+            entropy = entropy + weights[i] * self.calculate_entropy(clusters[i], classes)
         return entropy
 
     # Calculate the Gini index for a split dataset
@@ -63,12 +78,12 @@ class DecisionTree:
         return gini
 
     # Select the best split point for a dataset
-    def select_best_feature(self, dataset, current_gini, variable_importance, features_already_used):
+    def select_best_feature(self, dataset, current_entropy, variable_importance, features_already_used):
         class_values = list(set(row[-1] for row in dataset))
-        feature_index, feature_split_value, feature_gini_score, feature_clusters = 999, 999, 999, None  # best feature
+        feature_index, feature_split_value, feature_entropy_score, feature_clusters = 999, 999, 999, None  # best feature
         features = range(len(dataset[0]) - 1)
 
-        # find the (feature, feature_split_value) pair that result in the lowest gini index
+        # find the (feature, feature_split_value) pair that result in the best entropy result
 
         for index in features:  # for each feature
             if index in features_already_used:
@@ -77,26 +92,26 @@ class DecisionTree:
             if len(possible_values) == 2 and ((possible_values[0] == 0 and possible_values[1] == 1) or (possible_values[0] == 1 and possible_values[1] == 0)):
                 value = 0.5
                 clusters = self.split_dataset_by_feature(index, value, dataset)
-                gini = self.gini_index(clusters, class_values)
-                variable_importance[index] += current_gini - gini
-                if gini < feature_gini_score:
-                    feature_index, feature_split_value, feature_gini_score, feature_clusters = index, value, gini, clusters
+                entropy = self.calculate_entropy_clusters(clusters, class_values)
+                variable_importance[index] += current_entropy - entropy
+                if entropy < feature_entropy_score:
+                    feature_index, feature_split_value, feature_entropy_score, feature_clusters = index, value, entropy, clusters
             else:
                 for value in possible_values:  # for each value of that feature
                     # compute the clusters that result from the split
                     clusters = self.split_dataset_by_feature(index, value, dataset)
-                    # compute the gini index for the clusters
-                    gini = self.gini_index(clusters, class_values)
-                    variable_importance[index] += current_gini - gini
+                    # compute the entropy for the clusters
+                    entropy = self.calculate_entropy_clusters(clusters, class_values)
+                    variable_importance[index] += current_entropy - entropy
                     # replace the selected feature if a better one was found
-                    if gini < feature_gini_score:
-                        feature_index, feature_split_value, feature_gini_score, feature_clusters = index, value, gini, clusters
+                    if entropy < feature_entropy_score:
+                        feature_index, feature_split_value, feature_entropy_score, feature_clusters = index, value, entropy, clusters
         if feature_index == 999:
-            return {'index': None, 'feature': None, 'value': None, 'gini': current_gini,
+            return {'index': None, 'feature': None, 'value': None, 'entropy': entropy,
                     'clusters': None, 'features_already_used': features_already_used}
         features_already_used.append(feature_index)
         return {'index': feature_index, 'feature': self.columns[feature_index], 'value': feature_split_value,
-                'gini': feature_gini_score,
+                'entropy': feature_entropy_score,
                 'clusters': feature_clusters, 'features_already_used': features_already_used,
                 'unique_name': self.columns[feature_index] + randrange(9999).__str__()}
 
@@ -127,7 +142,7 @@ class DecisionTree:
         if len(left) <= min_size:
             node['left'] = self.create_terminal_node(left)
         else:  # compute the next split
-            node['left'] = self.select_best_feature(left, node['gini'], variable_importance,
+            node['left'] = self.select_best_feature(left, node['entropy'], variable_importance,
                                                     copy.deepcopy(node['features_already_used']))
             if node['left']['index'] == None:
                 node['left'] = self.create_terminal_node(left)
@@ -137,7 +152,7 @@ class DecisionTree:
         if len(right) <= min_size:
             node['right'] = self.create_terminal_node(right)
         else:  # compute the next split
-            node['right'] = self.select_best_feature(right, node['gini'], variable_importance,
+            node['right'] = self.select_best_feature(right, node['entropy'], variable_importance,
                                                      copy.deepcopy(node['features_already_used']))
             if node['right']['index'] == None:
                 node['right'] = self.create_terminal_node(right)
