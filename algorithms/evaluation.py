@@ -1,11 +1,12 @@
 import random
+import copy
 
 # Split a dataset into k folds
 import numpy as np
 import pandas as pd
 
 from algorithms.decision_tree import DecisionTree
-
+from algorithms.fairness_measures import demographic_parity, equalized_odds
 
 def cross_validation_split(dataset, n_folds):
     dataset_split = list()
@@ -94,12 +95,9 @@ def evaluate_algorithm(data, n_folds, *args):
     # test = np.append(x_test_np, y_test_np, axis=1)
     # dataset = np.concatenate((train, test)).tolist()
     columns = data.pop(0)
-    print(columns)
-    print(data[0])
     dataset = []
     for row in data:
         dataset.append([float(x) for x in row])
-    print(dataset[0])
     # folds = cross_validation_split(dataset, n_folds)
     mean_err = 0
     mean_acc = 0
@@ -132,12 +130,17 @@ def evaluate_algorithm(data, n_folds, *args):
     mean_sens += sensitivity(cm)
     mean_spec += specificity(cm)
     mean_f1 += f1_score(cm)
-    # for i in range(len(mean_variable_importance)):
-    #     mean_variable_importance[i] += variable_importance_fold[i]
-
-
-    # for i in range(len(mean_variable_importance)):
-    #     mean_variable_importance[i] /= n_folds
+    sex0 = columns.index('sex_0')
+    sex1 = columns.index('sex_1')
+    print('Demographic parity test set: ')
+    print(demographic_parity(test_set, [sex0, sex1], -1))
+    print('Demographic parity predicted set: ')
+    predicted_test_set = copy.deepcopy(test_set)
+    for i in range(0, len(predicted_test_set)):
+        predicted_test_set[i][-1] = predicted[i]
+    print(demographic_parity(predicted_test_set, [sex0, sex1], -1))
+    print('Equalized odds: ')
+    print(equalized_odds(test_set, predicted, [sex0, sex1], -1))
     return {
         'error_rate': mean_err,
         # 'oob_error_rate': mean_oob_err / float(len(folds)),

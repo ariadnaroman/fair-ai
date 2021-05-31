@@ -22,7 +22,7 @@ class DecisionTree:
         current_gini = self.gini_index([self.train], class_values)
         variable_importance = z = np.zeros(len(self.train[0]) - 1)
         self.root = self.select_best_feature(self.train, current_gini, variable_importance, [])
-        self.split_node(self.root, 20, 15, 1, variable_importance, None, None)
+        self.split_node(self.root, 10, 30, 1, variable_importance, None, None)
         return self.root
 
     # Split a dataset based on a feature and its split value
