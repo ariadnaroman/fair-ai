@@ -3,7 +3,7 @@ import numpy as np
 import pydot
 from math import log2
 import copy
-from algorithms.fairness_measures import demographic_parity
+from algorithms.fairness_measures import demographic_parity_marital_status_sex
 
 
 class DecisionTree:
@@ -25,10 +25,10 @@ class DecisionTree:
         if score_measure == 'ig':
             current_score = self.calculate_entropy(self.train, class_values)
         elif score_measure == 'fig':
-            current_score = self.calculate_demographic_parity(self.train)
+            current_score = demographic_parity_marital_status_sex(self.train, -1)
         variable_importance = z = np.zeros(len(self.train[0]) - 1)
         self.root = self.select_best_feature(self.train, score_measure, current_score, variable_importance, [])
-        self.split_node(self.root, 10, 30, 1, score_measure, variable_importance, None, None)
+        self.split_node(self.root, 7, 5, 1, score_measure, variable_importance, None, None)
         return self.root
 
     # Split a dataset based on a feature and its split value
@@ -63,12 +63,7 @@ class DecisionTree:
             entropy = entropy + weights[i] * self.calculate_entropy(clusters[i], classes)
         return entropy
 
-    def calculate_demographic_parity(self, dataset):
-        sex0 = self.columns.index('sex_0')
-        sex1 = self.columns.index('sex_1')
-        return demographic_parity(dataset, [sex0, sex1], -1)
-
-    def calculate_demographic_parity_clusters(self, clusters):
+    def calculate_demographic_parity_marital_status_sex_clusters(self, clusters):
         weights = []
         for i in range(0, len(clusters)):
             weights.append(len(clusters[i]))
@@ -77,7 +72,7 @@ class DecisionTree:
             weights[i] = weights[i]/float(total_number_instances)
         demographic_parity = 0
         for i in range(0, len(clusters)):
-            demographic_parity = demographic_parity + weights[i] * self.calculate_demographic_parity(clusters[i])
+            demographic_parity = demographic_parity + weights[i] * demographic_parity_marital_status_sex(clusters[i], -1)
         return demographic_parity
 
     # Calculate the Gini index for a split dataset
@@ -119,7 +114,7 @@ class DecisionTree:
                 if score_measure == 'ig':
                     score = self.calculate_entropy_clusters(clusters, class_values)
                 elif score_measure == 'fig':
-                    demographic_parity = self.calculate_demographic_parity_clusters(clusters)
+                    demographic_parity = self.calculate_demographic_parity_marital_status_sex_clusters(clusters)
                     if demographic_parity == 0:
                         score = self.calculate_entropy_clusters(clusters, class_values)
                     else:
@@ -135,7 +130,7 @@ class DecisionTree:
                     if score_measure == 'ig':
                         score = self.calculate_entropy_clusters(clusters, class_values)
                     elif score_measure == 'fig':
-                        demographic_parity = self.calculate_demographic_parity_clusters(clusters)
+                        demographic_parity = self.calculate_demographic_parity_marital_status_sex_clusters(clusters)
                         if demographic_parity == 0:
                             score = self.calculate_entropy_clusters(clusters, class_values)
                         else:
@@ -144,7 +139,7 @@ class DecisionTree:
                     if score < feature_score:
                         feature_index, feature_split_value, feature_score, feature_clusters = index, value, score, clusters
         if feature_index == 999:
-            return {'index': None, 'feature': None, 'value': None, 'score': score,
+            return {'index': None, 'feature': None, 'value': None, 'score': feature_score,
                     'clusters': None, 'features_already_used': features_already_used}
         features_already_used.append(feature_index)
         return {'index': feature_index, 'feature': self.columns[feature_index], 'value': feature_split_value,

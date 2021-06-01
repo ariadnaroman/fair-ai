@@ -8,51 +8,40 @@ from sklearn.preprocessing import MinMaxScaler
 class DataCleaning:
     def __init__(self, dataset):
         self.name = 'DataCleaning'
-        if dataset == 'adult':
-            self.raw_train_data = pd.read_csv(
-                'D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\raw\\adult\\train.csv')
-            self.raw_test_data = pd.read_csv(
-                'D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\raw\\adult\\test.csv')
-            self.numerical_columns = [0, 2, 4, 10, 11, 12]
-            self.categorical_columns = [1, 3, 5, 6, 7, 8, 9, 13]
-            self.input_columns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-            self.target_column = [14]
-            self.target_column_name = 'income'
+        if dataset == 'german':
+            self.raw_data = pd.read_csv(
+                'D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\raw\\german\\german.csv')
+            self.numerical_columns = [1,4,7,10,12,15,17]
+            self.categorical_columns = [0,2,3,5,6,8,9,11,13,14,16,18,19]
+            self.input_columns = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+            self.target_column = [20]
+            self.target_column_name = 'good/bad'
 
     def get_preprocessed_data(self):
-        x_processed_data, y_processed_data = self.merge_datasets()
-        x_train, x_test = self.preprocess_input_data(x_processed_data)
-        y_train, y_test = self.preprocess_target_data(y_processed_data)
-        return x_train, y_train, x_test, y_test
+        x_processed_data, y_processed_data = self.split_input_target()
+        x = self.preprocess_input_data(x_processed_data)
+        y = self.preprocess_target_data(y_processed_data)
+        return x, y
 
     def preprocess_input_data(self, input_data):
-        self.handle_missing_values(input_data)
-        self.encode_labels(input_data, self.categorical_columns)
+        # self.handle_missing_values(input_data)
+        # self.encode_labels(input_data, self.categorical_columns)
         input_data = self.apply_one_hot_encoder(input_data, self.categorical_columns)
         input_data = self.normalize_values(input_data)
-        processed_train, processed_test = self.extract_train_test(input_data)
-        return processed_train, processed_test
+        return input_data
 
     def preprocess_target_data(self, target_data):
         self.encode_labels(target_data, [0])
         # target_data = self.apply_one_hot_encoder(target_data, [0])
         target_data = self.normalize_values(target_data)
-        processed_train, processed_test = self.extract_train_test(target_data)
-        return processed_train, processed_test
+        return target_data
 
-    def extract_train_test(self, merged_data):
-        train_length = len(self.raw_train_data.index)
-        train_data = merged_data.iloc[:train_length, :]
-        test_data = merged_data.iloc[train_length:, :]
-        return train_data, test_data
-
-    def merge_datasets(self):
-        processed_train = self.raw_train_data.copy(deep=True)
-        processed_test = self.raw_test_data.copy(deep=True)
-        merged_data = pd.concat([processed_train, processed_test], ignore_index=True)
-        y_merged_data = merged_data.iloc[:, self.target_column]
-        x_merged_data = merged_data.iloc[:, self.input_columns]
-        return x_merged_data, y_merged_data
+    def split_input_target(self):
+        processed = self.raw_data.copy(deep=True)
+        df = pd.DataFrame(processed)
+        y_data = df.iloc[:, self.target_column]
+        x_data = df.iloc[:, self.input_columns]
+        return x_data, y_data
 
     def normalize_values(self, dataset):
         scaler = MinMaxScaler()

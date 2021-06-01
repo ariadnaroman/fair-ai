@@ -2,40 +2,41 @@ import numpy as np
 import csv
 
 from preprocessing.data_cleaning import DataCleaning
+from sklearn.model_selection import train_test_split
 from preprocessing.data_evaluation import DataEvaluation
 from algorithms.decision_tree_sklearn import DecisionTreeSklearn
 from algorithms.decision_tree import DecisionTree
 from algorithms.evaluation import evaluate_algorithm
 
-# dataCleaning = DataCleaning('adult')
-# x_train, y_train, x_test, y_test = dataCleaning.get_preprocessed_data()
-# print('x_train')
-# print(x_train)
-# print('y_train')
-# print(y_train)
-# print('x_test')
-# print(x_test)
-# print('y_test')
-# print(y_test)
-# x_train_np = x_train.to_numpy(copy=True)
-# y_train_np = y_train.to_numpy(copy=True)
-# x_test_np = x_test.to_numpy(copy=True)
-# y_test_np = y_test.to_numpy(copy=True)
-# train = np.append(x_train_np, y_train_np, axis=1)
-# test = np.append(x_test_np, y_test_np, axis=1)
+dataCleaning = DataCleaning('german')
+x, y = dataCleaning.get_preprocessed_data()
+print('x')
+print(x)
+print('y')
+print(y)
+x_np = x.to_numpy(copy=True)
+y_np = y.to_numpy(copy=True)
+x_train_np, x_test_np, y_train_np, y_test_np = train_test_split(x, y, test_size=0.25, random_state=82, shuffle=True)
+train = np.append(x_train_np, y_train_np, axis=1)
+test = np.append(x_test_np, y_test_np, axis=1)
 # dataset = np.concatenate((train, test)).tolist()
-#
-#
-# print(len(dataset))
-#
-# columns = [column for column in x_train.columns] + ['income']
-#
-# with open('./datasets/processed/adult/adult_processed.csv', 'w', newline='') as f:
-#     # using csv.writer method from CSV package
-#     write = csv.writer(f)
-#
-#     write.writerow(columns)
-#     write.writerows(dataset)
+
+columns = [column for column in x.columns] + ['good/bad']
+
+with open('./datasets/processed/german/german_processed_train.csv', 'w', newline='') as f:
+    # using csv.writer method from CSV package
+    write = csv.writer(f)
+
+    write.writerow(columns)
+    write.writerows(train)
+
+with open('./datasets/processed/german/german_processed_test.csv', 'w', newline='') as f:
+    # using csv.writer method from CSV package
+    write = csv.writer(f)
+
+    write.writerow(columns)
+    write.writerows(test)
+
 # dataEvaluation = DataEvaluation(x_train, y_train)
 # dataEvaluation.evaluate_dataset()
 # decisionTree = DecisionTreeSklearn(x_train, y_train, x_test, y_test)
@@ -44,7 +45,11 @@ from algorithms.evaluation import evaluate_algorithm
 # decisionTree.evaluate()
 
 
-with open('D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\processed\\adult\\adult_processed.csv', newline='') as f:
+with open('D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\processed\\german\\german_processed_train.csv', newline='') as f:
     reader = csv.reader(f)
-    dataset = list(reader)
-    print(evaluate_algorithm(dataset, 10))
+    train = list(reader)
+    with open('D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\processed\\german\\german_processed_test.csv',
+              newline='') as f:
+        reader = csv.reader(f)
+        test = list(reader)
+        print(evaluate_algorithm(train, test, 10))
