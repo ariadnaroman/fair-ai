@@ -1,7 +1,9 @@
 def demographic_parity(dataset, sensitive_columns, target_column):
     s1 = [row for row in dataset if row[sensitive_columns[0]] == 0 and row[sensitive_columns[1]] == 1]
-    positive_rate_s1 = [row[target_column] for row in s1].count(1) / float(len(s1))
     s2 = [row for row in dataset if row[sensitive_columns[0]] == 1 and row[sensitive_columns[1]] == 0]
+    if (not len(s1)) or (not len(s2)):
+        return 0
+    positive_rate_s1 = [row[target_column] for row in s1].count(1) / float(len(s1))
     positive_rate_s2 = [row[target_column] for row in s2].count(1) / float(len(s2))
     return abs(positive_rate_s1 - positive_rate_s2)
 

@@ -3,6 +3,7 @@ import numpy as np
 import pydot
 from math import log2
 import copy
+from algorithms.fairness_measures import demographic_parity
 
 
 class DecisionTree:
@@ -18,11 +19,16 @@ class DecisionTree:
 
     # Build a decision tree
     def build_tree(self):
+        score_measure = 'fig'
         class_values = list(set(row[-1] for row in self.train))
-        current_entropy = self.calculate_entropy(self.train, class_values)
+        current_score = 999
+        if score_measure == 'ig':
+            current_score = self.calculate_entropy(self.train, class_values)
+        elif score_measure == 'fig':
+            current_score = self.calculate_demographic_parity(self.train)
         variable_importance = z = np.zeros(len(self.train[0]) - 1)
-        self.root = self.select_best_feature(self.train, current_entropy, variable_importance, [])
-        self.split_node(self.root, 10, 30, 1, variable_importance, None, None)
+        self.root = self.select_best_feature(self.train, score_measure, current_score, variable_importance, [])
+        self.split_node(self.root, 10, 30, 1, score_measure, variable_importance, None, None)
         return self.root
 
     # Split a dataset based on a feature and its split value
@@ -57,6 +63,23 @@ class DecisionTree:
             entropy = entropy + weights[i] * self.calculate_entropy(clusters[i], classes)
         return entropy
 
+    def calculate_demographic_parity(self, dataset):
+        sex0 = self.columns.index('sex_0')
+        sex1 = self.columns.index('sex_1')
+        return demographic_parity(dataset, [sex0, sex1], -1)
+
+    def calculate_demographic_parity_clusters(self, clusters):
+        weights = []
+        for i in range(0, len(clusters)):
+            weights.append(len(clusters[i]))
+        total_number_instances = sum(weights)
+        for i in range (0, len(weights)):
+            weights[i] = weights[i]/float(total_number_instances)
+        demographic_parity = 0
+        for i in range(0, len(clusters)):
+            demographic_parity = demographic_parity + weights[i] * self.calculate_demographic_parity(clusters[i])
+        return demographic_parity
+
     # Calculate the Gini index for a split dataset
     def gini_index(self, clusters, classes):
         # count all instances at split point
@@ -78,12 +101,12 @@ class DecisionTree:
         return gini
 
     # Select the best split point for a dataset
-    def select_best_feature(self, dataset, current_entropy, variable_importance, features_already_used):
+    def select_best_feature(self, dataset, score_measure, current_score, variable_importance, features_already_used):
         class_values = list(set(row[-1] for row in dataset))
-        feature_index, feature_split_value, feature_entropy_score, feature_clusters = 999, 999, 999, None  # best feature
+        feature_index, feature_split_value, feature_score, feature_clusters = 999, 999, 999, None  # best feature
         features = range(len(dataset[0]) - 1)
 
-        # find the (feature, feature_split_value) pair that result in the best entropy result
+        # find the (feature, feature_split_value) pair that result in the best score
 
         for index in features:  # for each feature
             if index in features_already_used:
@@ -92,26 +115,40 @@ class DecisionTree:
             if len(possible_values) == 2 and ((possible_values[0] == 0 and possible_values[1] == 1) or (possible_values[0] == 1 and possible_values[1] == 0)):
                 value = 0.5
                 clusters = self.split_dataset_by_feature(index, value, dataset)
-                entropy = self.calculate_entropy_clusters(clusters, class_values)
-                variable_importance[index] += current_entropy - entropy
-                if entropy < feature_entropy_score:
-                    feature_index, feature_split_value, feature_entropy_score, feature_clusters = index, value, entropy, clusters
+                score = 999
+                if score_measure == 'ig':
+                    score = self.calculate_entropy_clusters(clusters, class_values)
+                elif score_measure == 'fig':
+                    demographic_parity = self.calculate_demographic_parity_clusters(clusters)
+                    if demographic_parity == 0:
+                        score = self.calculate_entropy_clusters(clusters, class_values)
+                    else:
+                        score = self.calculate_entropy_clusters(clusters, class_values) * demographic_parity
+                variable_importance[index] += current_score - score
+                if score < feature_score:
+                    feature_index, feature_split_value, feature_score, feature_clusters = index, value, score, clusters
             else:
                 for value in possible_values:  # for each value of that feature
                     # compute the clusters that result from the split
                     clusters = self.split_dataset_by_feature(index, value, dataset)
-                    # compute the entropy for the clusters
-                    entropy = self.calculate_entropy_clusters(clusters, class_values)
-                    variable_importance[index] += current_entropy - entropy
-                    # replace the selected feature if a better one was found
-                    if entropy < feature_entropy_score:
-                        feature_index, feature_split_value, feature_entropy_score, feature_clusters = index, value, entropy, clusters
+                    score = 999
+                    if score_measure == 'ig':
+                        score = self.calculate_entropy_clusters(clusters, class_values)
+                    elif score_measure == 'fig':
+                        demographic_parity = self.calculate_demographic_parity_clusters(clusters)
+                        if demographic_parity == 0:
+                            score = self.calculate_entropy_clusters(clusters, class_values)
+                        else:
+                            score = self.calculate_entropy_clusters(clusters, class_values) * demographic_parity
+                    variable_importance[index] += current_score - score
+                    if score < feature_score:
+                        feature_index, feature_split_value, feature_score, feature_clusters = index, value, score, clusters
         if feature_index == 999:
-            return {'index': None, 'feature': None, 'value': None, 'entropy': entropy,
+            return {'index': None, 'feature': None, 'value': None, 'score': score,
                     'clusters': None, 'features_already_used': features_already_used}
         features_already_used.append(feature_index)
         return {'index': feature_index, 'feature': self.columns[feature_index], 'value': feature_split_value,
-                'entropy': feature_entropy_score,
+                'score': feature_score,
                 'clusters': feature_clusters, 'features_already_used': features_already_used,
                 'unique_name': self.columns[feature_index] + randrange(9999).__str__()}
 
@@ -121,7 +158,7 @@ class DecisionTree:
         return max(set(outcomes), key=outcomes.count)
 
     # Recursive function that splits the dataset while building the tree, until getting to terminal nodes
-    def split_node(self, node, max_depth, min_size, depth, variable_importance, parent, childKey):
+    def split_node(self, node, max_depth, min_size, depth, score_measure, variable_importance, parent, childKey):
         left, right = node['clusters']
         del (node['clusters'])
         # check if any of the clusters is empty
@@ -142,22 +179,22 @@ class DecisionTree:
         if len(left) <= min_size:
             node['left'] = self.create_terminal_node(left)
         else:  # compute the next split
-            node['left'] = self.select_best_feature(left, node['entropy'], variable_importance,
+            node['left'] = self.select_best_feature(left, score_measure, node['score'], variable_importance,
                                                     copy.deepcopy(node['features_already_used']))
             if node['left']['index'] == None:
                 node['left'] = self.create_terminal_node(left)
             else:
-                self.split_node(node['left'], max_depth, min_size, depth + 1, variable_importance, node, 'left')
+                self.split_node(node['left'], max_depth, min_size, depth + 1, score_measure, variable_importance, node, 'left')
         # check if the min_size of a node has been reached (for right child)
         if len(right) <= min_size:
             node['right'] = self.create_terminal_node(right)
         else:  # compute the next split
-            node['right'] = self.select_best_feature(right, node['entropy'], variable_importance,
+            node['right'] = self.select_best_feature(right, score_measure, node['score'], variable_importance,
                                                      copy.deepcopy(node['features_already_used']))
             if node['right']['index'] == None:
                 node['right'] = self.create_terminal_node(right)
             else:
-                self.split_node(node['right'], max_depth, min_size, depth + 1, variable_importance, node, 'right')
+                self.split_node(node['right'], max_depth, min_size, depth + 1, score_measure, variable_importance, node, 'right')
         if node['left'] == node['right']:
             parent[childKey] = self.create_terminal_node(left + right)
 

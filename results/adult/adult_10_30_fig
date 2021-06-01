@@ -1,0 +1,8 @@
+{'true_positive': 455, 'true_negative': 12429, 'false_negative': 3391, 'false_positive': 5}
+Demographic parity test set:
+0.19100743971470835
+Demographic parity predicted set:
+0.016917901495955973
+Equalized odds:
+{'true_positive_parity': 0.6131868131868132, 'false_positive_parity': 0.6000000000000001}
+{'error_rate': 20.85995085995086, 'accuracy': 79.14004914004914, 'precision': 98.8915453162356, 'sensitivity': 11.830165622318713, 'specificity': 99.95898376239535, 'f1_score': 21.13330236878774}
