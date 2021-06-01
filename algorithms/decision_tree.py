@@ -145,7 +145,7 @@ class DecisionTree:
         return {'index': feature_index, 'feature': self.columns[feature_index], 'value': feature_split_value,
                 'score': feature_score,
                 'clusters': feature_clusters, 'features_already_used': features_already_used,
-                'unique_name': self.columns[feature_index] + randrange(9999).__str__()}
+                'unique_name': self.columns[feature_index] + ' < ' + feature_split_value.__str__() + '\n' + len(dataset).__str__() + ' instances'}
 
     # Create a terminal node
     def create_terminal_node(self, cluster):
@@ -206,21 +206,21 @@ class DecisionTree:
             else:
                 return node['left']
 
-    def draw_edge(self, parent_name, child_name):
-        edge = pydot.Edge(parent_name, child_name)
+    def draw_edge(self, parent_name, child_name, label):
+        edge = pydot.Edge(parent_name, child_name, label=label)
         self.graph.add_edge(edge)
 
-    def visit(self, node, parent=None):
+    def visit(self, node, parent=None, labelFromParent=''):
         if parent:
-            self.draw_edge(parent['unique_name'], node['unique_name'])
+            self.draw_edge(parent['unique_name'], node['unique_name'], labelFromParent)
         if isinstance(node['left'], dict):
-            self.visit(node['left'], node)
+            self.visit(node['left'], node, 'YES')
         else:
-            self.draw_edge(node['unique_name'], node['left'].__str__() + ' ' + node['unique_name'])
+            self.draw_edge(node['unique_name'], node['left'].__str__() + '\n' + 'id: ' + randrange(9999).__str__(), 'YES')
         if 'right' in node and isinstance(node['right'], dict):
-            self.visit(node['right'], node)
+            self.visit(node['right'], node, 'NO')
         elif 'right' in node:
-            self.draw_edge(node['unique_name'], node['right'].__str__() + ' ' + node['unique_name'])
+            self.draw_edge(node['unique_name'], node['right'].__str__() + '\n' + 'id: ' + randrange(9999).__str__(), 'NO')
 
     def visualize_tree(self):
         self.graph = pydot.Dot(graph_type='graph')
