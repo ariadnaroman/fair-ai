@@ -27,7 +27,7 @@ class DataCleaning:
 
     def preprocess_input_data(self, input_data):
         self.handle_missing_values(input_data)
-        self.encode_labels(input_data, self.categorical_columns)
+        # self.encode_labels(input_data, self.categorical_columns)
         input_data = self.apply_one_hot_encoder(input_data, self.categorical_columns)
         input_data = self.normalize_values(input_data)
         processed_train, processed_test = self.extract_train_test(input_data)
