@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from algorithms.decision_tree import DecisionTree
-from algorithms.fairness_measures import demographic_parity_marital_status_sex, equalized_odds_marital_status_sex
+from algorithms.fairness_measures import demographic_parity_marital_status_sex_v2, equalized_odds_marital_status_sex_v2
 
 def cross_validation_split(dataset, n_folds):
     dataset_split = list()
@@ -133,14 +133,14 @@ def evaluate_algorithm(train, test, n_folds, *args):
     mean_spec += specificity(cm)
     mean_f1 += f1_score(cm)
     print('Demographic parity test set: ')
-    print(demographic_parity_marital_status_sex(test_set, -1))
+    print(demographic_parity_marital_status_sex_v2(test_set, -1))
     print('Demographic parity predicted set: ')
     predicted_test_set = copy.deepcopy(test_set)
     for i in range(0, len(predicted_test_set)):
         predicted_test_set[i][-1] = predicted[i]
-    print(demographic_parity_marital_status_sex(predicted_test_set, -1))
+    print(demographic_parity_marital_status_sex_v2(predicted_test_set, -1))
     print('Equalized odds: ')
-    print(equalized_odds_marital_status_sex(test_set, predicted, -1))
+    print(equalized_odds_marital_status_sex_v2(test_set, predicted, -1))
     return {
         'error_rate': mean_err,
         # 'oob_error_rate': mean_oob_err / float(len(folds)),
