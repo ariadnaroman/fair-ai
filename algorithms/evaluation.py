@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from algorithms.decision_tree import DecisionTree
-from algorithms.fairness_measures import demographic_parity_marital_status_sex_v2, equalized_odds_marital_status_sex_v2
+from algorithms.fairness_measures import demographic_parity_urm_vs_others, equalized_odds_urm_vs_others
 
 def cross_validation_split(dataset, n_folds):
     dataset_split = list()
@@ -77,23 +77,8 @@ def confusion_matrix(actual, predicted):
             'false_positive': fp}
 
 
-#
-# def oob_error_rate(tree, oob_data):
-#     predicted = [decisionTree.predict(tree, row) for row in oob_data]
-#     actual = [row[-1] for row in oob_data]
-#     cm = confusion_matrix(actual, predicted)
-#     return error_rate(cm)
-
-
 # Evaluate an algorithm using k-fold cross validation
 def evaluate_algorithm(train, test, n_folds, *args):
-    # x_train_np = x_train.to_numpy(copy=True)
-    # y_train_np = y_train.to_numpy(copy=True)
-    # x_test_np = x_test.to_numpy(copy=True)
-    # y_test_np = y_test.to_numpy(copy=True)
-    # train = np.append(x_train_np, y_train_np, axis=1)
-    # test = np.append(x_test_np, y_test_np, axis=1)
-    # dataset = np.concatenate((train, test)).tolist()
     columns = train.pop(0)
     train_set = []
     for row in train:
@@ -109,17 +94,6 @@ def evaluate_algorithm(train, test, n_folds, *args):
     mean_sens = 0
     mean_spec = 0
     mean_f1 = 0
-    mean_oob_err = 0
-    mean_variable_importance = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    # for fold in folds:
-    #     train_set = list(folds)
-    #     train_set.remove(fold)
-    #     train_set = sum(train_set, [])
-    #     test_set = list()
-    #     for row in fold:
-    #         row_copy = list(row)
-    #         test_set.append(row_copy)
-    #         row_copy[-1] = None
     decisionTree = DecisionTree(train_set, test_set, columns)
     tree = decisionTree.build_tree()
     decisionTree.visualize_tree()
@@ -133,21 +107,19 @@ def evaluate_algorithm(train, test, n_folds, *args):
     mean_spec += specificity(cm)
     mean_f1 += f1_score(cm)
     print('Demographic parity test set: ')
-    print(demographic_parity_marital_status_sex_v2(test_set, -1))
+    print(demographic_parity_urm_vs_others(test_set, -1))
     print('Demographic parity predicted set: ')
     predicted_test_set = copy.deepcopy(test_set)
     for i in range(0, len(predicted_test_set)):
         predicted_test_set[i][-1] = predicted[i]
-    print(demographic_parity_marital_status_sex_v2(predicted_test_set, -1))
+    print(demographic_parity_urm_vs_others(predicted_test_set, -1))
     print('Equalized odds: ')
-    print(equalized_odds_marital_status_sex_v2(test_set, predicted, -1))
+    print(equalized_odds_urm_vs_others(test_set, predicted, -1))
     return {
         'error_rate': mean_err,
-        # 'oob_error_rate': mean_oob_err / float(len(folds)),
         'accuracy': mean_acc,
         'precision': mean_prec,
         'sensitivity': mean_sens,
         'specificity': mean_spec,
         'f1_score': mean_f1
-        # 'variable_importance': mean_variable_importance
     }

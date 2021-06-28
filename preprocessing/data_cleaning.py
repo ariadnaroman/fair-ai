@@ -24,16 +24,11 @@ class DataCleaning:
         return x, y
 
     def preprocess_input_data(self, input_data):
-        # self.handle_missing_values(input_data)
-        # self.encode_labels(input_data, self.categorical_columns)
         input_data = self.apply_one_hot_encoder(input_data, self.categorical_columns)
         input_data = self.normalize_values(input_data)
         return input_data
 
     def preprocess_target_data(self, target_data):
-        # self.encode_labels(target_data, [0])
-        # target_data = self.apply_one_hot_encoder(target_data, [0])
-        # target_data = self.normalize_values(target_data)
         return target_data
 
     def split_input_target(self):
