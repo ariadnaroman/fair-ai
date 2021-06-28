@@ -8,14 +8,14 @@ from sklearn.preprocessing import MinMaxScaler
 class DataCleaning:
     def __init__(self, dataset):
         self.name = 'DataCleaning'
-        if dataset == 'german':
+        if dataset == 'law':
             self.raw_data = pd.read_csv(
-                'D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\raw\\german\\german.csv')
-            self.numerical_columns = [1,4,7,10,12,15,17]
-            self.categorical_columns = [0,2,3,5,6,8,9,11,13,14,16,18,19]
-            self.input_columns = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
-            self.target_column = [20]
-            self.target_column_name = 'good/bad'
+                'D:\\Facultate\Disertatie\\experiments\\fair-ai\\datasets\\raw\\law\\law_csv.csv')
+            self.numerical_columns = [0,1,2,3,5,6,7,8,9,10,11]
+            self.categorical_columns = [4]
+            self.input_columns = [0,1,2,3,4,5,6,7,8,9,10,11]
+            self.target_column = [12]
+            self.target_column_name = 'admit'
 
     def get_preprocessed_data(self):
         x_processed_data, y_processed_data = self.split_input_target()
@@ -31,9 +31,9 @@ class DataCleaning:
         return input_data
 
     def preprocess_target_data(self, target_data):
-        self.encode_labels(target_data, [0])
+        # self.encode_labels(target_data, [0])
         # target_data = self.apply_one_hot_encoder(target_data, [0])
-        target_data = self.normalize_values(target_data)
+        # target_data = self.normalize_values(target_data)
         return target_data
 
     def split_input_target(self):

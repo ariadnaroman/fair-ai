@@ -28,7 +28,7 @@ class DecisionTree:
             current_score = demographic_parity_marital_status_sex_v2(self.train, -1)
         variable_importance = z = np.zeros(len(self.train[0]) - 1)
         self.root = self.select_best_feature(self.train, score_measure, current_score, variable_importance, [])
-        self.split_node(self.root, 7, 5, 1, score_measure, variable_importance, None, None)
+        self.split_node(self.root, 10, 50, 1, score_measure, variable_importance, None, None)
         return self.root
 
     # Split a dataset based on a feature and its split value
@@ -157,7 +157,7 @@ class DecisionTree:
         return {'index': feature_index, 'feature': self.columns[feature_index], 'value': feature_split_value,
                 'score': feature_score,
                 'clusters': feature_clusters, 'features_already_used': features_already_used,
-                'unique_name': self.columns[feature_index] + ' < ' + feature_split_value.__str__() + '\n' + len(dataset).__str__() + ' instances'}
+                'unique_name': self.columns[feature_index] + ' < ' + feature_split_value.__str__() + '\n' + len(dataset).__str__() + ' instances' + '\n' + 'id: ' + randrange(9999).__str__() }
 
     # Create a terminal node
     def create_terminal_node(self, cluster):
@@ -202,7 +202,7 @@ class DecisionTree:
                 node['right'] = self.create_terminal_node(right)
             else:
                 self.split_node(node['right'], max_depth, min_size, depth + 1, score_measure, variable_importance, node, 'right')
-        if node['left'] == node['right']:
+        if node['left'] == node['right'] and parent:
             parent[childKey] = self.create_terminal_node(left + right)
 
     # Make a prediction with a decision tree
